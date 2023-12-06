@@ -4,10 +4,12 @@ local features = require "bigfile.features"
 
 ---@class config
 ---@field filesize integer size in MiB
+---@field filesize_bytes integer size in bytes
 ---@field pattern string|string[]|fun(bufnr: number, filesize_mib: number): boolean an |autocmd-pattern| or callback to override detection of big files
 ---@field features string[] array of features
 local default_config = {
   filesize = 2,
+  filesize_bytes = 100000,
   pattern = { "*" },
   features = {
     "indent_blankline",
@@ -31,7 +33,7 @@ local function get_buf_size(bufnr)
   if not (ok and stats) then
     return
   end
-  return math.floor(0.5 + (stats.size / (1024 * 1024)))
+  return stats.size
 end
 
 ---@param bufnr number
@@ -43,7 +45,7 @@ local function pre_bufread_callback(bufnr, config)
   end
 
   local filesize = get_buf_size(bufnr) or 0
-  local bigfile_detected = filesize >= config.filesize
+  local bigfile_detected = filesize >= config.filesize_bytes
   if type(config.pattern) == "function" then
     bigfile_detected = config.pattern(bufnr, filesize) or bigfile_detected
   end
